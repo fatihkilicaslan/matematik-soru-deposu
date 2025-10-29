@@ -15,11 +15,13 @@ from models import SoruModel, KategoriModel
 db = Database()
 roboflow_client = RoboflowClient()
 
+# Uploads klasörünü oluştur (uygulama başlamadan önce)
+os.makedirs("uploads", exist_ok=True)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Uygulama başlatıldığında çalışır"""
     db.create_tables()
-    os.makedirs("uploads", exist_ok=True)
     yield
 
 app = FastAPI(title="Matematik Soru Deposu API", version="1.0.0", lifespan=lifespan)
