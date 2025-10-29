@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://matematik-soru-deposu-production.up.railway.app';
 
 // Webcam stream
 let webcamStream = null;
