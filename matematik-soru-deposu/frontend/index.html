@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matematik Soru Deposu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 3px dashed #007bff;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #0056b3;
+        }
+        .upload-area.dragover {
+            background: #cce7ff;
+            border-color: #0056b3;
+        }
+        .question-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+        }
+        .question-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .category-badge {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .loading {
+            display: none;
+        }
+        .mobile-optimized {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-calculator me-2"></i>
+                Matematik Soru Deposu
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mobile-optimized">
+        <!-- Yükleme Alanı -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-upload me-2"></i>Soru Fotoğrafı Yükle</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5>Soru fotoğrafını buraya sürükleyin</h5>
+                            <p class="text-muted">veya aşağıdaki seçenekleri kullanın</p>
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                            <div class="mt-3">
+                                <button class="btn btn-primary me-2" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Dosya Seç
+                                </button>
+                                <button class="btn btn-success me-2" onclick="openCamera()" id="cameraBtn">
+                                    <i class="fas fa-camera me-2"></i>Kamera
+                                </button>
+                                <button class="btn btn-info" onclick="document.getElementById('mobileCamera').click()" id="mobileCameraBtn" style="display: none;">
+                                    <i class="fas fa-mobile-alt me-2"></i>Telefon Kamerası
+                                </button>
+                                <input type="file" id="mobileCamera" accept="image/*" capture="environment" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <!-- Webcam Modal -->
+                        <div class="modal fade" id="webcamModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Webcam ile Fotoğraf Çek</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <video id="webcamVideo" autoplay playsinline style="max-width: 100%; border-radius: 8px;"></video>
+                                        <canvas id="webcamCanvas" style="display: none;"></canvas>
+                                        <div class="mt-3">
+                                            <button class="btn btn-success btn-lg" onclick="capturePhoto()">
+                                                <i class="fas fa-camera me-2"></i>Fotoğraf Çek
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="loading mt-3" id="loadingDiv">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border text-primary me-3" role="status"></div>
+                                <span>Sorular işleniyor...</span>
+                            </div>
+                        </div>
+                        
+                        <div id="uploadResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtreler -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <select class="form-select" id="kategoriFilter">
+                                    <option value="">Tüm Kategoriler</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option value="pending">Cevap Bekliyor</option>
+                                    <option value="answered">Cevaplandı</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="difficultyFilter">
+                                    <option value="">Tüm Seviyeler</option>
+                                    <option value="1">Kolay</option>
+                                    <option value="2">Orta</option>
+                                    <option value="3">Zor</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100" onclick="loadQuestions()">
+                                    <i class="fas fa-search me-2"></i>Filtrele
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sorular Listesi -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-list me-2"></i>Sorular</h5>
+                        <span class="badge bg-primary" id="questionCount">0 soru</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="questionsList">
+                            <!-- Sorular buraya yüklenecek -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Görsel Büyütme Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Soru Görseli</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" class="img-fluid" src="" alt="Soru Görseli">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cevap Modal -->
+    <div class="modal fade" id="answerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Soru Cevapla</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 text-center">
+                        <img id="modalQuestionImage" class="img-fluid" src="" alt="Soru" style="max-height: 400px;">
+                    </div>
+                    <form id="answerForm">
+                        <input type="hidden" id="questionId">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Doğru Cevap</label>
+                                <select class="form-select" id="answerText" required>
+                                    <option value="">Seçin</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Kategori</label>
+                                <select class="form-select" id="questionCategory" required>
+                                    <option value="">Kategori Seçin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Zorluk Seviyesi</label>
+                                <select class="form-select" id="difficultyLevel">
+                                    <option value="1">Kolay</option>
+                                    <option value="2">Orta</option>
+                                    <option value="3">Zor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAnswer()">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
